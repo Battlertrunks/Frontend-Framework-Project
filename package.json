@@ -1,0 +1,12 @@
+{
+  "name": "functional-js-framework",
+  "version": "1.0.0",
+  "description": "Making a frontend framework from scratch because I want to learn!",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gavin Szczesniak",
+  "license": "ISC"
+}
