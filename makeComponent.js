@@ -8,28 +8,59 @@ export const init = (selector, component) => {
 };
 
 let state = {};
+let watcher = {};
 
 export const createComponent = ({
   template,
   methods = {},
+  watchers = {},
   initialState = {}
 }) => {
   state = initialState;
   let previous;
-  console.log(template)
+
   const mappedMethods = props =>
     Object.keys(methods).reduce(
       (acc, key) => ({
         ...acc,
         [key]: (...args) => {
-          console.log(methods[key], state, args)
           state = methods[key](state, ...args);
+          console.log(methods, key, props)
+          const nextNode = template({
+            ...props,
+            ...state,
+            ...watchers,
+            methods: mappedMethods(props)
+          });
+          console.log(nextNode);
+          
+          const app = document.querySelector("#app");
+          app.textContent = '';
+          nextNode.forEach(template => {
+            app.appendChild(template.template)
+          });
+
+          previous = [...nextNode];
+          return state;
+        }
+      }), {}
+    );
+
+  const mappedWatchers = props =>
+    Object.keys(watchers).reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: () => {
+          console.log(watchers, key)
+          state = watchers[key];
           console.log(state)
           const nextNode = template({
             ...props,
             ...state,
-            methods: mappedMethods(props)
+            ...methods,
+            watchers: mappedWatchers(props)
           });
+          console.log(nextNode);
           
           const app = document.querySelector("#app");
           app.textContent = '';
@@ -44,7 +75,8 @@ export const createComponent = ({
     );
 
     return props => {
-      previous = template({ ...props, ...state, methods: mappedMethods(props) });
+      previous = template({ ...props, ...state, methods: mappedMethods(props), ...mappedWatchers(props) });
+      console.log(previous)
       return previous;
     }
 };
