@@ -46,24 +46,38 @@ function effect(callback) {
   effectCallback = null;
 }
 
+// Handle events that occur on the DOM
+export const onClick = f => ({
+  type: "event",
+  click: f
+});
+
 const createElement = tagName => (strings, ...args) => {
 
   console.log(tagName);
 
-  const { template } = strings.reduce((acc, curString, index) => {
-    console.log(acc.template);
-    console.log(curString);
+  const { template, on } = strings.reduce((acc, curString, index) => {
+    
+    console.log(args[index])
+    if (args[index]?.type === "event") {
+      return {
+        ...acc,
+        on: { click: args[index].click }
+      }
+    } 
+
     return {
       ...acc,
       template: acc.template + curString + (args[index] ? args[index]() : "")
     };
-  } , { template: {} });
+  } , { template: "", on: {} });
 
   console.log(template);
 
   // Create the DOM element 
   const element = document.createElement(tagName);
 
+  if (on?.click) element.addEventListener("click", on.click);
   element.appendChild(document.createTextNode(template))
   return {
     type: "element",
@@ -74,17 +88,31 @@ const createElement = tagName => (strings, ...args) => {
 const p      = createElement("p");
 const button = createElement("button");
 
+function reRenderDOM(tagName, updatedContent) {
+  // TODO: Make this more dynamic and less one use or path
+  const element = document.getElementsByTagName(tagName)[0];
+  element.textContent = updatedContent;
+}
 
 // Component of the counter we can increase number and display the number
 function CounterComponent() {
-
   // Scaffold the state
   const [value, setValue] = createSignal(1);
 
+  const addCount = () => {
+    setValue(value() + 1);
+    reRenderDOM("p", `sup, ${value()}`)
+  };
+
+  // TODO
+  // Make a effect / computed property
+  effect(() => {
+    console.log('hey')
+  });
 
   return [
     p`sup, ${value}`,
-    button`Add 1`
+    button`${onClick(() => addCount())}Add 1`
   ];
 }
 
