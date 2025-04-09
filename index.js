@@ -1,125 +1,101 @@
-/**
- * Recursively apply the elements from the component to the parent element of the component
- * @param {string} tagName - The HTML element to be used on the specific tree
- * @param {Object} props - Props the element would contain
- * @param {Object[]} children - Child element(s) of the parent element (if any)
- * @returns {Object} - The element that was constructed
- */
-function applyNode(tagName, text, initialState, props, children) {
-  if (tagName) {
-    const tagElement = document.createElement(tagName);
-    
-    // If the element contains text in the attribute, add text to the element
-    if (text) {
-      tagElement.append(applyingNodeText(text));
-    }
 
-    let state = initialState
+class Signal {
+  constructor(value) {
+    this.value = value;
+    this.subscribers = [];
+  }
 
-    const mappedMethods = methods =>
-      Object.keys(props).length ? Object.keys(props).reduce((acc, key) => ({
-        ...acc,
-        [key]: (...args) => {
-          state = methods[key](state, ...args);
-        }
-      }), {}) : {}
+  getValue() {
+    return this.value;
+  }
 
-    for (const child of children) {
-      // Recursively create the child element, its attributes, and recursively for the children too
-      const childElement = applyNode(child.parent, child.text, state, child.attributes, child.children);
+  setValue(newValue) {
+    this.value = newValue;
+    this._emit();
+  }
 
-      tagElement.appendChild(childElement);
-    }
+  _emit() {
+    this.subscribers.forEach(subscribe => subscribe(this.value));
+  }
 
-    // Return the Node tree to then be rendered to the user
-    const methodz = mappedMethods(props);
-    if (methodz.on) {
-      tagElement.addEventListener('click', methodz.on)
-    }
-    return tagElement;
+  subscribe(cb) {
+    this.subscribers.push(cb);
   }
 }
 
-/**
- * Apply text to the node if they have text within their properties
- * @param {string} text - The text that will be appended to the element
- * @returns {Object} - The text that is created from the text node
- */
-function applyingNodeText(text) {
-  return document.createTextNode(text);
+let effectCallback = null;
+
+function createSignal(value) {
+  const signal = new Signal(value);
+
+  return [
+    function value() {
+      if (effectCallback) signal.subscribe(effectCallback);
+
+      return signal.getValue();
+    },
+    function setValue(newValue) {
+      signal.setValue(newValue);
+    }
+  ]
 }
 
-/**
- * Apply the elements to form the node tree of the DOM to then be rendered to the page
- * @param {Object} component - The tree to build to the DOM
- */
-function render(component) {
-  const dom = document.getElementById("app");
-
-  const formattedDOM = applyNode(component.parent, component.text, component.state, component.attributes, component.children);
-
-  // TODO:
-  // Will come back to this since we could have more than one component at a time
-  dom.append(formattedDOM)
+function effect(callback) {
+  effectCallback = callback;
+  effectCallback();
+  effectCallback = null;
 }
 
-const CoolComponent = () => {
-  const state = {
-    count: 0
-  }
+const createElement = tagName => (strings, ...args) => {
 
-  const template = {
-    parent: "div",
-    state,
-    text: "",
-    attributes: {},
-    children: [
-      {
-        parent: "p",
-        text: "Counter: ",
-        attributes: {},
-        children: [
-          {
-            parent: "span",
-            text: `${state.count}`,
-            attributes: {},
-            children: []
-          }
-        ]
-      },
-      {
-        parent: "button",
-        text: "Add 1",
-        attributes: {
-          on() {
-            state.count++;
-            console.log(template)
-            render(template)
-          }
-          // Need to make a event listener to track button clicks
-        },
-        children: []
-      }
-    ]
-  }
+  console.log(tagName);
 
-  return template;
+  const { template } = strings.reduce((acc, curString, index) => {
+    console.log(acc.template);
+    console.log(curString);
+    return {
+      ...acc,
+      template: acc.template + curString + (args[index] ? args[index]() : "")
+    };
+  } , { template: {} });
+
+  console.log(template);
+
+  // Create the DOM element 
+  const element = document.createElement(tagName);
+
+  element.appendChild(document.createTextNode(template))
+  return {
+    type: "element",
+    template: element
+  };
+};
+
+const p      = createElement("p");
+const button = createElement("button");
+
+
+// Component of the counter we can increase number and display the number
+function CounterComponent() {
+
+  // Scaffold the state
+  const [value, setValue] = createSignal(1);
+
+
+  return [
+    p`sup, ${value}`,
+    button`Add 1`
+  ];
 }
 
-const componentData = CoolComponent();
-render(componentData);
+function init(selector, component) {
+  const app = document.querySelector(selector);
 
+  console.log(component);
+  component.forEach(template => {
+    console.log(template)
+    app.appendChild(template.template)
+  });
+}
 
-// -------- Planning -----------
-// Store element component
-// render onto the root element
-
-// Update DOM method
-
-// Create the element and text element
-
-// Set state
-
-// Update State
-
-// Retrieve event handlers (onClick...)
+init('#app', CounterComponent());
