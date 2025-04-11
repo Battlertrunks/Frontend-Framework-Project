@@ -1,3 +1,8 @@
+/**
+ * Create the element in a component based on the arguments
+ * @param {string} tagName - the tag type of the element
+ * @returns {Object} - The type of element and the template contents
+ */
 const createElement = tagName => (strings, ...args) => {
   const { template, on } = strings.reduce((acc, curString, index) => {
     

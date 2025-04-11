@@ -3,7 +3,10 @@ import { createSignal, effect } from "./framework/reactivity.js";
 import { p, button } from "./framework/createElements.js";
 import { onClick } from "./framework/eventHandler.js";
 
-// Component of the counter we can increase number and display the number
+/**
+ * Component of the counter we can increase number and display the number
+ * @returns {Object[]} - Object of the tag and template
+ */
 export function CounterComponent() {
   // Scaffold the state
   const [value, setValue] = createSignal(1);
